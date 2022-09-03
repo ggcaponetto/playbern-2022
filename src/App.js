@@ -3,111 +3,89 @@ import './App.css';
 import Phaser from "phaser/dist/phaser-arcade-physics.min"
 import {useEffect} from "react";
 
-function TextPlayer(props) {
-    const play = (text) => {
-        if ('speechSynthesis' in window) {
-            // Speech Synthesis supported 🎉
-            var msg = new SpeechSynthesisUtterance();
-            msg.text = text;
-            window.speechSynthesis.cancel();
-            window.speechSynthesis.speak(msg);
-        } else {
-            // Speech Synthesis Not Supported 😣
-            alert("Sorry, your browser doesn't support text to speech!");
-        }
-    }
-    return <button onClick={() => {
-        play(props.text)
-    }}>{props.text}</button>;
-}
-
-var UIScene = new Phaser.Class({
+// UI
+let UIScene = new Phaser.Class({
     Extends: Phaser.Scene,
     initialize:
         function UIScene() {
             Phaser.Scene.call(this, {key: 'UIScene', active: true});
-
             this.score = 0;
         },
     create: function () {
         //  Our Text object to display the Score
-        var info = this.add.text(10, 10, 'Score: 0', {font: '48px Arial', fill: '#ff0000'});
+        let info = this.add.text(10, 10, 'Score: 0', {font: '48px Arial', fill: '#ff0000'});
         //  Grab a reference to the Game Scene
-        var ourGame = this.scene.get('GameScene');
-        //  Listen for events from it
-        /*ourGame.events.on('addScore', function () {
-            this.score += 10;
-            info.setText('Score: ' + this.score);
-        }, this);*/
+        let ourGame = this.scene.get('GameScene');
     }
-
 });
 
-function preload() {
-    this.load.setBaseURL(window.location.origin);
-
-    this.load.image('sky', 'assets/logo512.png');
-    this.load.image('logo', 'assets/logo192.png');
-
-    this.load.image('red', 'assets/logo192.png');
-}
-
-function create() {
+// GAME SCENES
+let GameScene = new Phaser.Class({
+    Extends: Phaser.Scene,
+});
+GameScene.prototype.create = function() {
     this.add.image(400, 300, 'sky');
-
-    var particles = this.add.particles('red');
-
-    var emitter = particles.createEmitter({
+    let particles = this.add.particles('red');
+    let emitter = particles.createEmitter({
         speed: 10,
         scale: {start: 0.5, end: 0},
         blendMode: 'ADD'
     });
-
-    var logo = this.physics.add.image(400, 100, 'logo');
-
-    logo.setVelocity(300000, 300000);
+    let logo = this.physics.add.image(400, 100, 'logo');
+    logo.setVelocity(300, 300);
     logo.setBounce(0.995, 0.990);
     logo.setCollideWorldBounds(true);
-
     emitter.startFollow(logo);
-}
-
-var GameScene = new Phaser.Class({
-    Extends: Phaser.Scene,
-    preload: preload,
-    create: create
-});
+};
+GameScene.prototype.preload = function() {
+    this.load.setBaseURL(window.location.origin);
+    this.load.image('sky', 'assets/logo512.png');
+    this.load.image('logo', 'assets/logo192.png');
+    this.load.image('red', 'assets/logo192.png');
+};
 
 
 function App() {
     useEffect(() => {
-        let config = {
-            type: Phaser.AUTO,
-            width: 600,
-            height: 500,
-            backgroundColor: '#000000',
-            physics: {
-                default: 'arcade',
-                arcade: {
-                    gravity: {y: 200}
-                }
-            },
-            scene: [
-                GameScene, UIScene
-            ]
-        };
-
-        let game = new Phaser.Game(config);
+        let parent = window.document.getElementById("game");
+        let game;
+        let config;
+        if(parent){
+            config = {
+                parent: parent,
+                // Game size
+                width: parent.clientWidth,
+                height: parent.clientHeight,
+                scale: {
+                    // Or set parent divId here
+                    parent: parent,
+                    mode: Phaser.Scale.FIT,
+                    autoCenter: Phaser.Scale.CENTER_BOTH,
+                    zoom: 1,  // Size of game canvas = game size * zoom
+                },
+                type: Phaser.AUTO,
+                backgroundColor: '#000000',
+                physics: {
+                    default: 'arcade',
+                    arcade: {
+                        gravity: {y: 200}
+                    }
+                },
+                scene: [
+                    GameScene, UIScene
+                ]
+            };
+            game = new Phaser.Game(config);
+        }
         return () => {
-            game.destroy(true, false);
+            if(game){
+                game.destroy(true, false);
+            }
         }
     }, [])
     return (
-        <div className="App">
-            <TextPlayer text={"This is cultural appropriation."}></TextPlayer>
-            <TextPlayer text={"I feel unconfortable."}></TextPlayer>
-            <TextPlayer text={"I feel the uncomfort."}></TextPlayer>
-            <TextPlayer text={"fuck off you nasty bastard."}></TextPlayer>
+        <div id={"game"}>
+
         </div>
     );
 }
